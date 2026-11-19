@@ -26,7 +26,17 @@ sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0'
 
 APK: `app/build/outputs/apk/debug/app-debug.apk`. CI workflow: **Build Xelo Client APK**, artifact **xelo-client-debug**. These build and package checks are not tests of Minecraft. Install only a signed APK from a trusted build. Debug APKs with a different signing key cannot replace an existing beta APK; keep a backup of your existing client data and do not uninstall Minecraft to install Xelo.
 
-## Verify with Minecraft on Android
+## Test the Hotbar shortcuts in Minecraft 26.62
+
+1. On Xelo Home, check that the installed game version is `1.26.62.1`. Go to **Dashboard → Modules → Touch Modules**. Select **Hotbar 1**, **Hotbar 5** and **Hotbar 9**. A prior selection of a Hotbar slot on the same Xelo install carries over; legacy preview selections do not create controls in the pack.
+2. Tap **Import Xelo Hotbar → Import**. Wait for Minecraft to confirm import. If it only opens the game or rejects the handoff, return to Xelo and choose **Save .mcpack** from the import dialog. Open that file in Minecraft from the Android Files app.
+3. In Minecraft, go to **Settings → Global Resources → My Packs**. Activate **Xelo - Hotbar (1, 5, 9)**, with no other Xelo Hotbar pack active. If Minecraft reports a duplicate import, look for the already-imported pack. Disable competing HUD packs for this test and re-enter the world after changing packs.
+4. In a local world with touch controls and the HUD visible, put different items into slots 1, 5 and 9. Check that only buttons **1**, **5** and **9** appear in the shortcut row above the normal hotbar. Tap them in a different order. A pass means the normal hotbar selection and the item in hand change to the matching slot on every tap, without placing/using an item or breaking a block. An import message or visible buttons without this effect are **not** a pass.
+5. Disable the pack in Global Resources and re-enter the world. The shortcut buttons should be gone and vanilla controls should still work. To change slots, export the new selection and switch packs in Minecraft. Deselecting in Xelo does not change an active pack. The legacy preview editor does not set the positions or opacity of the in-game row.
+
+The pack adds only a small `ui/hud_screen.json` modification, using `hud.root_panel`, `#hotbar_visible` and the `button.slot_1` … `button.slot_9` action names in Mojang's [26.60 HUD sample](https://github.com/Mojang/bedrock-samples/blob/v1.26.60.5/resource_pack/ui/hud_screen.json). It uses no behavior scripts, overlay permissions or game binary changes. JSON UI, touch modes, screen layout and interactions with other HUD packs can differ in the game; the unit tests cover pack contents and mapping, not input delivery in Minecraft. Report the game version, touch mode, and whether import, visibility and each tap worked. Start in a local world; server compatibility has not been verified.
+
+## Test the visual packs in Minecraft
 
 1. On a phone with the official game installed, open Xelo Home. Record the version it shows. Launch the game and return to Xelo.
 2. Go to **Dashboard → Modules → No pumpkin overlay → Import**. In Minecraft, wait for its *import succeeded* message; opening the app is not enough.

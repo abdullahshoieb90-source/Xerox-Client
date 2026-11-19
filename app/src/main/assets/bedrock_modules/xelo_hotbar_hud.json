@@ -1,0 +1,81 @@
+{
+  "namespace": "hud",
+  "root_panel": {
+    "modifications": [
+      {
+        "array_name": "controls",
+        "operation": "insert_back",
+        "value": [
+          {
+            "xelo_hotbar_shortcuts@hud.xelo_hotbar_shortcuts": {
+              "ignored": "(not $touch)"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "xelo_hotbar_shortcuts": {
+    "type": "stack_panel",
+    "orientation": "horizontal",
+    "size": ["90%", 26],
+    "anchor_from": "bottom_middle",
+    "anchor_to": "bottom_middle",
+    "offset": [0, -72],
+    "layer": 20,
+    "bindings": [
+      {
+        "binding_type": "global",
+        "binding_name": "#hotbar_visible",
+        "binding_name_override": "#visible"
+      }
+    ],
+    "controls": []
+  },
+  "xelo_hotbar_button@common.button": {
+    "focus_enabled": false,
+    "prevent_touch_input": true,
+    "button_mappings": [
+      {
+        "from_button_id": "button.menu_select",
+        "to_button_id": "$pressed_button_name",
+        "mapping_type": "pressed",
+        "consume_event": true,
+        "button_up_right_of_first_refusal": true
+      }
+    ],
+    "controls": [
+      {
+        "default": {
+          "type": "image",
+          "texture": "textures/ui/button_borderless_light",
+          "size": ["100%", "100%"],
+          "alpha": 0.8
+        }
+      },
+      {
+        "hover": {
+          "type": "image",
+          "texture": "textures/ui/button_borderless_lighthover",
+          "size": ["100%", "100%"]
+        }
+      },
+      {
+        "pressed": {
+          "type": "image",
+          "texture": "textures/ui/button_borderless_lightpressed",
+          "size": ["100%", "100%"]
+        }
+      },
+      {
+        "slot_number": {
+          "type": "label",
+          "text": "$xelo_slot_number",
+          "color": [1.0, 1.0, 1.0],
+          "shadow": true,
+          "layer": 2
+        }
+      }
+    ]
+  }
+}

@@ -103,14 +103,14 @@ public class ModulesFragment extends BaseThemedFragment {
         ThemeManager theme = ThemeManager.getInstance();
 
         TextView title = new TextView(requireContext());
-        title.setText(item[1]);
+        title.setText(TOUCH_MODULES.equals(item[0]) ? getString(R.string.bedrock_touch_title) : item[1]);
         title.setTextSize(18);
         title.setTypeface(null, Typeface.BOLD);
         title.setTextColor(theme.getColor("onSurface"));
         labels.addView(title);
 
         TextView description = new TextView(requireContext());
-        description.setText(item[2]);
+        description.setText(TOUCH_MODULES.equals(item[0]) ? getString(R.string.bedrock_touch_status) : item[2]);
         description.setTextSize(14);
         description.setPadding(0, dp(4), 0, 0);
         description.setTextColor(theme.getColor("onSurfaceVariant"));

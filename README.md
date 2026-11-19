@@ -15,7 +15,7 @@ fee0c2372ab5ba521ff939ea1290dd4e206f04bf491a03a8cffa1e29e2272ebd&" width="351" h
 
 ## Original Xelo Client on Android
 
-The active Android build is the original **Xelo Client** (`:app`). It retains the Dashboard, Modules and Touch Modules screens and opens the user-installed Minecraft Bedrock app. Three visual modules are available to try as resource packs. The legacy native and touch modules are **not active in the installed game** in this build. See the [Android Bedrock guide](docs/android-bedrock.md) for status, build instructions and on-device verification.
+The active Android build is the original **Xelo Client** (`:app`). It opens the user-installed Minecraft Bedrock app and offers three visual resource packs. In **Touch Modules**, selected Hotbar 1–9 shortcuts can be exported as an experimental resource pack for manual activation in Minecraft. Other legacy touch modules remain preview-only. See the [Android Bedrock guide](docs/android-bedrock.md) for limitations, build instructions and the on-device test.
 
 > **We are looking for contributors/maintainers to help keep the project alive and speed up the development. You can help by fixing bugs, implementing & improving features, etc.**
 

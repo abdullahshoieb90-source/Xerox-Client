@@ -185,6 +185,10 @@ public class InbuiltModManager {
         return added;
     }
 
+    public Set<String> getAddedModIds() {
+        return new HashSet<>(addedMods);
+    }
+
     public void addMod(String modId) {
         addedMods.add(modId);
         savePrefs();

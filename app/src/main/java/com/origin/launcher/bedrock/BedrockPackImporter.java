@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.IntConsumer;
@@ -83,6 +84,43 @@ public final class BedrockPackImporter implements AutoCloseable {
             }
             return new ByteArrayInputStream(pack.toByteArray());
         }, ".mcpack", null, finished));
+    }
+
+    public void openHotbar(BedrockHotbarPack hotbar, IntConsumer finished) {
+        if (!begin()) return;
+        worker.execute(() -> stageAndSend(() -> new ByteArrayInputStream(buildHotbar(hotbar)),
+                ".mcpack", null, finished));
+    }
+
+    /** Fallback for Android/Minecraft versions that do not accept a direct VIEW handoff. */
+    public void saveHotbar(BedrockHotbarPack hotbar, Uri destination, IntConsumer finished) {
+        if (!begin()) return;
+        if (destination == null || !ContentResolver.SCHEME_CONTENT.equals(destination.getScheme())) {
+            finish(finished, R.string.bedrock_hotbar_save_failed);
+            return;
+        }
+        worker.execute(() -> {
+            int result = 0;
+            try {
+                byte[] pack = buildHotbar(hotbar);
+                try (OutputStream out = activity.getContentResolver().openOutputStream(destination)) {
+                    if (out == null) throw new IOException("Selected output unavailable");
+                    out.write(pack);
+                }
+            } catch (IOException | RuntimeException ignored) {
+                result = R.string.bedrock_hotbar_save_failed;
+            }
+            int status = result;
+            activity.runOnUiThread(() -> finish(finished, status));
+        });
+    }
+
+    private byte[] buildHotbar(BedrockHotbarPack hotbar) throws IOException {
+        ByteArrayOutputStream pack = new ByteArrayOutputStream();
+        try (InputStream template = activity.getAssets().open(BedrockHotbarPack.UI_TEMPLATE_ASSET)) {
+            hotbar.writePack(pack, template);
+        }
+        return pack.toByteArray();
     }
 
     private void stageAndSend(DocumentSource source, String extension, String type, IntConsumer finished) {

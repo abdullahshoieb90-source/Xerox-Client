@@ -22,6 +22,7 @@ import com.origin.launcher.Launcher.inbuilt.manager.InbuiltModManager;
 import com.origin.launcher.Launcher.inbuilt.model.InbuiltMod;
 import com.origin.launcher.Launcher.inbuilt.model.ModIds;
 import com.origin.launcher.animation.DynamicAnim;
+import com.origin.launcher.bedrock.BedrockHotbarPack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,27 +64,23 @@ public class InbuiltModsAdapter extends RecyclerView.Adapter<InbuiltModsAdapter.
         Context context = holder.itemView.getContext();
 
         holder.name.setText(mod.getName());
-holder.description.setText(mod.getDescription());
-
         boolean isAdded = modManager.isModAdded(mod.getId());
+        boolean isHotbar = BedrockHotbarPack.supports(mod.getId());
+        holder.description.setText(isHotbar
+                ? (isAdded ? R.string.bedrock_hotbar_selected : R.string.bedrock_hotbar_unselected)
+                : R.string.bedrock_touch_legacy_only);
+        int action = isHotbar
+                ? (isAdded ? R.string.bedrock_hotbar_deselect : R.string.bedrock_hotbar_select)
+                : (isAdded ? R.string.bedrock_touch_preview_remove : R.string.bedrock_touch_preview_add);
+        holder.addButton.setText(action);
+        holder.addButton.setAllCaps(false);
+        holder.addButton.setContentDescription(context.getString(R.string.bedrock_touch_module_action,
+                context.getString(action), mod.getName()));
+        holder.addButton.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(context,
+                isAdded ? android.R.color.holo_red_light : android.R.color.holo_green_light)));
 
-        if (isAdded) {
-            holder.addButton.setText("REMOVE");
-            holder.addButton.setBackgroundTintList(
-                    ColorStateList.valueOf(
-                            ContextCompat.getColor(context, android.R.color.holo_red_light)
-                    )
-            );
-        } else {
-            holder.addButton.setText("ADD");
-            holder.addButton.setBackgroundTintList(
-                    ColorStateList.valueOf(
-                            ContextCompat.getColor(context, android.R.color.holo_green_light)
-                    )
-            );
-        }
-
-        if (mod.getId().equals(ModIds.AUTO_SPRINT) && isAdded) {
+        holder.configSpinner.setOnItemSelectedListener(null);
+        if (ModIds.AUTO_SPRINT.equals(mod.getId()) && isAdded) {
             holder.configContainer.setVisibility(View.VISIBLE);
 
             String[] options = {

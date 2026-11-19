@@ -12,13 +12,14 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="12dp">
 
         <ImageButton
             android:id="@+id/close_inbuilt_button"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@android:string/cancel"
             android:src="@drawable/ic_arrow_down"
             android:tint="@color/onSurface" />
 
@@ -26,9 +27,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:text="@string/inbuilt_mods_title"
+            android:layout_marginHorizontal="8dp"
+            android:text="@string/bedrock_touch_title"
             android:textColor="@color/onSurface"
             android:fontFamily="sans-serif-light"
             android:textSize="24sp"
@@ -36,9 +36,10 @@
 
         <ImageButton
             android:id="@+id/customise_inbuilt_mod_button"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/bedrock_touch_preview"
             android:src="@drawable/wrench"
             android:tint="@color/onSurface" />
 
@@ -48,8 +49,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="@color/background"
+        app:cardBackgroundColor="@color/surface"
         app:strokeWidth="1dp"
         app:strokeColor="@color/outline">
 
@@ -57,37 +57,55 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="12dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/bedrock_touch_status"
                 android:textColor="@color/onSurface"
-                android:textSize="14sp"
-                android:layout_marginBottom="16dp" />
+                android:textSize="14sp" />
 
             <TextView
-                android:id="@+id/empty_inbuilt_text"
+                android:id="@+id/inbuilt_hotbar_selection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="@string/no_inbuilt_mods_available"
-                android:textColor="@color/onSurface"
-                android:textSize="16sp"
-                android:alpha="0.5"
-                android:padding="32dp"
-                android:visibility="gone" />
+                android:layout_marginTop="8dp"
+                android:accessibilityLiveRegion="polite"
+                android:text="@string/bedrock_hotbar_empty"
+                android:textColor="@color/onSurfaceVariant"
+                android:textSize="13sp" />
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/inbuilt_mods_recycler"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/inbuilt_hotbar_import"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:maxHeight="400dp"
-                android:clipToPadding="false" />
+                android:layout_marginTop="6dp"
+                android:text="@string/bedrock_hotbar_import"
+                android:enabled="false" />
 
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/empty_inbuilt_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/no_inbuilt_mods_available"
+        android:textColor="@color/onSurface"
+        android:textSize="16sp"
+        android:alpha="0.5"
+        android:padding="16dp"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/inbuilt_mods_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingTop="12dp"
+        android:clipToPadding="false" />
 
 </LinearLayout>
