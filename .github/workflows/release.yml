@@ -147,7 +147,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Promote the verified Xelo debug APK to a direct download
+      - name: Check the source build and its APK verification
+        id: source
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -172,9 +173,21 @@ jobs:
               and any(.steps[]; .name == "Verify signed APK" and .conclusion == "success"))
           '
 
-          out=$(mktemp -d)
-          trap 'rm -rf "$out"' EXIT
-          gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" --name xelo-client-debug --dir "$out"
+          printf 'sha=%s\n' "$source_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Download the signed debug artifact from the source run
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.publish_debug_run_id }}
+          name: xelo-client-debug
+          path: ${{ runner.temp }}/xelo-verified
+
+      - name: Recheck the APK package, alignment and signature
+        id: apk
+        shell: bash
+        run: |
+          out="$RUNNER_TEMP/xelo-verified"
           apk="$out/xelo-client-android-test.apk"
           mv "$out/app-debug.apk" "$apk"
           tools="$ANDROID_HOME/build-tools/36.0.0"
@@ -183,7 +196,20 @@ jobs:
           badging=$("$tools/aapt" dump badging "$apk")
           grep -q "^package: name='com.origin.launcher.beta'" <<< "$badging"
           digest=$(sha256sum "$apk" | cut -d ' ' -f 1)
+          printf 'sha256=%s\n' "$digest" >> "$GITHUB_OUTPUT"
 
+      - name: Publish a test-only GitHub prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.publish_debug_run_id }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          APK_SHA256: ${{ steps.apk.outputs.sha256 }}
+        run: |
+          out="$RUNNER_TEMP/xelo-verified"
+          apk="$out/xelo-client-android-test.apk"
+          source_sha="$SOURCE_SHA"
+          digest="$APK_SHA256"
           tag="xelo-android-test-${source_sha:0:12}"
           if git show-ref --verify --quiet "refs/tags/$tag"; then
             test "$(git rev-parse "refs/tags/$tag^{commit}")" = "$source_sha"
@@ -201,5 +227,12 @@ jobs:
           Source commit: $source_sha
           APK SHA-256: $digest
           NOTES
-          gh release create "$tag" "$apk" --repo "$GITHUB_REPOSITORY" --target "$source_sha" \
-            --title 'Xelo Client – Android test APK' --notes-file "$out/notes.md" --prerelease --latest=false
+          if ! result=$(gh release create "$tag" "$apk" --repo "$GITHUB_REPOSITORY" --target "$source_sha" \
+            --title 'Xelo Client – Android test APK' --notes-file "$out/notes.md" --prerelease --latest=false 2>&1); then
+            printf '%s\n' "$result"
+            # Make the HTTP status and reason visible alongside the failing check.
+            error=${result%%$'\n'*}
+            printf '::error title=Test APK release failed::%s\n' "${error//%/%25}"
+            exit 1
+          fi
+          printf '%s\n' "$result"
