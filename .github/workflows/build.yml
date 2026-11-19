@@ -12,25 +12,41 @@ permissions:
 
 jobs:
   debug-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
-      - uses: android-actions/setup-android@v3
+      - name: Check pinned Android SDK components
+        run: |
+          if [[ ! -f "$ANDROID_HOME/platforms/android-36/android.jar" || ! -x "$ANDROID_HOME/build-tools/36.0.0/apksigner" ]]; then
+            sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0'
+          fi
+          test -f "$ANDROID_HOME/platforms/android-36/android.jar"
+          test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner"
 
-      - name: Install pinned Android SDK components
-        run: sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0'
-
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: Test and build the original Android app
-        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace
+        shell: bash
+        run: |
+          log="$RUNNER_TEMP/xelo-build.log"
+          if ! ./gradlew :app:testDebugUnitTest :app:assembleDebug --console=plain 2>&1 | tee "$log"; then
+            python3 - "$log" <<'PYTHON'
+          import pathlib, sys
+          lines = pathlib.Path(sys.argv[1]).read_text(errors="replace").splitlines()
+          at = next((i for i, line in enumerate(lines) if line.startswith("* What went wrong:")), len(lines) - 10)
+          excerpt = [line for line in lines if "error:" in line or line.startswith("e: ")][:20]
+          message = "\n".join(excerpt + lines[max(0, at):at+10])[:6000]
+          print("::error title=Xelo Android build failed::" + message.replace("%", "%25").replace("\n", "%0A").replace("\r", "%0D"))
+          PYTHON
+            exit 1
+          fi
 
       - name: Verify signed APK
         run: |
@@ -42,14 +58,14 @@ jobs:
           grep -q "^package: name='com.origin.launcher.beta'" <<< "$aapt_output"
           sha256sum "$apk"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: xelo-client-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: xelo-client-test-results

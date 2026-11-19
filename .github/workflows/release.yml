@@ -11,21 +11,24 @@ on:
 
 jobs:
   release-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-      - name: Install pinned Android SDK components
-        run: sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Check pinned Android SDK components
+        run: |
+          if [[ ! -f "$ANDROID_HOME/platforms/android-36/android.jar" || ! -x "$ANDROID_HOME/build-tools/36.0.0/apksigner" ]]; then
+            sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0'
+          fi
+          test -f "$ANDROID_HOME/platforms/android-36/android.jar"
+          test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner"
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
@@ -68,7 +71,7 @@ jobs:
           fi
 
       - name: Upload Release APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: origin-release-apk-${{ github.run_number }}
           path: app/build/outputs/apk/release/*.apk
@@ -76,7 +79,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Release Test Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: release-test-results-${{ github.run_number }}
@@ -87,7 +90,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload Mapping Files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: release-mapping-${{ github.run_number }}
           path: |
