@@ -8,9 +8,15 @@ on:
         required: false
         default: false
         type: boolean
+      publish_debug_run_id:
+        description: 'Successful Xelo debug workflow run ID to publish as a test APK'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   release-build:
+    if: inputs.publish_debug_run_id == ''
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -127,3 +133,73 @@ jobs:
           tag_name: "v${{ github.run_number }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-android-test:
+    if: inputs.publish_debug_run_id != '' && github.ref_type == 'branch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Promote the verified Xelo debug APK to a direct download
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.publish_debug_run_id }}
+        run: |
+          if [[ ! "$SOURCE_RUN" =~ ^[0-9]+$ ]]; then
+            echo '::error::Enter a numeric GitHub Actions run ID.'
+            exit 1
+          fi
+          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN")
+          source_sha=$(jq -er --arg repo "$GITHUB_REPOSITORY" --arg branch "$GITHUB_REF_NAME" '
+            select(.status == "completed" and .conclusion == "success"
+              and .path == ".github/workflows/build.yml"
+              and (.event == "push" or .event == "workflow_dispatch")
+              and .head_repository.full_name == $repo and .head_branch == $branch)
+            | .head_sha
+          ' <<< "$run")
+          [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]
+          git merge-base --is-ancestor "$source_sha" "$GITHUB_SHA"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN/jobs" | jq -e '
+            any(.jobs[]; .name == "debug-build" and .conclusion == "success"
+              and any(.steps[]; .name == "Verify signed APK" and .conclusion == "success"))
+          '
+
+          out=$(mktemp -d)
+          trap 'rm -rf "$out"' EXIT
+          gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" --name xelo-client-debug --dir "$out"
+          apk="$out/xelo-client-android-test.apk"
+          mv "$out/app-debug.apk" "$apk"
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          "$tools/zipalign" -c -P 16 4 "$apk"
+          "$tools/apksigner" verify "$apk"
+          badging=$("$tools/aapt" dump badging "$apk")
+          grep -q "^package: name='com.origin.launcher.beta'" <<< "$badging"
+          digest=$(sha256sum "$apk" | cut -d ' ' -f 1)
+
+          tag="xelo-android-test-${source_sha:0:12}"
+          if git show-ref --verify --quiet "refs/tags/$tag"; then
+            test "$(git rev-parse "refs/tags/$tag^{commit}")" = "$source_sha"
+          fi
+          cat > "$out/notes.md" <<NOTES
+          Signed debug APK from the original Xelo Client Android app, not Companion.
+          Download **xelo-client-android-test.apk** directly. No ZIP extraction is needed.
+
+          This is a test build, not a stable release or proof that all modules work on Bedrock.
+          Three resource-pack modules are available to try on Android Bedrock 26.62 (1.26.62.1).
+          Touch Modules are preview-only and do not run in the game in this build.
+          Do not uninstall Minecraft to install Xelo.
+
+          Verified build: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN
+          Source commit: $source_sha
+          APK SHA-256: $digest
+          NOTES
+          gh release create "$tag" "$apk" --repo "$GITHUB_REPOSITORY" --target "$source_sha" \
+            --title 'Xelo Client – Android test APK' --notes-file "$out/notes.md" --prerelease --latest=false
