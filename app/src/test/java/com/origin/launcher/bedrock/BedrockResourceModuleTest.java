@@ -2,9 +2,9 @@ package com.origin.launcher.bedrock;
 
 import org.junit.Test;
 
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -18,10 +18,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import javax.imageio.ImageIO;
 
 import static org.junit.Assert.*;
 
@@ -73,12 +72,45 @@ public class BedrockResourceModuleTest {
     public void overlayPacksHaveTransparentTexturesWithVanillaDimensions() throws IOException {
         for (BedrockResourceModule module : new BedrockResourceModule[] {
                 BedrockResourceModule.NO_PUMPKIN_OVERLAY, BedrockResourceModule.NO_SPYGLASS_OVERLAY}) {
-            BufferedImage png = ImageIO.read(ASSETS.resolve(module.getTextureAsset()).toFile());
-            assertNotNull(png);
-            assertEquals(256, png.getWidth());
-            assertEquals(256, png.getHeight());
-            for (int argb : png.getRGB(0, 0, 256, 256, null, 0, 256)) {
-                assertEquals(0, argb >>> 24);
+            // The bundled blank texture is an 8-bit RGBA, non-interlaced PNG with
+            // zero-valued image data. Zero deltas reconstruct zero-alpha pixels
+            // under each of the five PNG row filters.
+            try (DataInputStream png = new DataInputStream(Files.newInputStream(
+                    ASSETS.resolve(module.getTextureAsset())))) {
+                assertEquals(0x89504E470D0A1A0AL, png.readLong());
+                assertEquals(13, png.readInt());
+                assertEquals(0x49484452, png.readInt()); // IHDR
+                assertEquals(256, png.readInt());
+                assertEquals(256, png.readInt());
+                assertEquals(8, png.readUnsignedByte());
+                assertEquals(6, png.readUnsignedByte()); // RGBA color type
+                assertEquals(0, png.readUnsignedByte());
+                assertEquals(0, png.readUnsignedByte());
+                assertEquals(0, png.readUnsignedByte()); // No interlacing
+                png.readInt(); // IHDR CRC
+
+                ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+                while (true) {
+                    int length = png.readInt();
+                    int kind = png.readInt();
+                    assertTrue(length >= 0 && length <= 4096);
+                    byte[] data = new byte[length];
+                    png.readFully(data);
+                    png.readInt(); // Chunk CRC (ZIP test checks the bytes too).
+                    if (kind == 0x49454E44) break; // IEND
+                    if (kind == 0x49444154) compressed.write(data); // IDAT
+                }
+                try (DataInputStream rows = new DataInputStream(new InflaterInputStream(
+                        new ByteArrayInputStream(compressed.toByteArray())))) {
+                    byte[] row = new byte[256 * 4];
+                    byte[] zero = new byte[row.length];
+                    for (int y = 0; y < 256; y++) {
+                        assertTrue(rows.readUnsignedByte() <= 4);
+                        rows.readFully(row);
+                        assertArrayEquals(zero, row);
+                    }
+                    assertEquals(-1, rows.read());
+                }
             }
         }
     }
