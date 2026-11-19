@@ -57,9 +57,9 @@ public class ConfigurationFragment extends BaseThemedFragment {
 
             FeatureSettings fs = FeatureSettings.getInstance();
             addSwitchItem(
-                    getString(R.string.version_isolation),
-                    fs.isVersionIsolationEnabled(),
-                    (btn, checked) -> fs.setVersionIsolationEnabled(checked)
+                    getString(R.string.bedrock_version_isolation_unavailable),
+                    false,
+                    null
             );
             addSwitchItem(
                     getString(R.string.show_logcat_overlay),
@@ -89,7 +89,8 @@ public class ConfigurationFragment extends BaseThemedFragment {
         MaterialSwitch sw = ll.findViewById(R.id.switch_value);
         sw.setChecked(defChecked);
         ThemeUtils.applyThemeToSwitch(sw, requireContext());
-        if (listener != null) sw.setOnCheckedChangeListener(listener);
+        if (listener == null) sw.setEnabled(false);
+        else sw.setOnCheckedChangeListener(listener);
         settingsItemsContainer.addView(ll);
     }
 

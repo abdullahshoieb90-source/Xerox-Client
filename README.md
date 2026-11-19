@@ -13,11 +13,16 @@ fee0c2372ab5ba521ff939ea1290dd4e206f04bf491a03a8cffa1e29e2272ebd&" width="351" h
 </div>
 
 
-**Xelo-Client** is an advanced minecraft bedrock client for __android__ designed for pvpers, survival players, builders etc. Xelo has alot of features and a crazy fps boost
+## Original Xelo Client on Android
+
+The active Android build is the original **Xelo Client** (`:app`). It retains the Dashboard, Modules and Touch Modules screens and opens the user-installed Minecraft Bedrock app. Three visual modules are available to try as resource packs. The legacy native and touch modules are **not active in the installed game** in this build. See the [Android Bedrock guide](docs/android-bedrock.md) for status, build instructions and on-device verification.
 
 > **We are looking for contributors/maintainers to help keep the project alive and speed up the development. You can help by fixing bugs, implementing & improving features, etc.**
 
-## Features
+## Historical features
+
+This list describes the original embedded runtime, **not** what has been verified on current Bedrock. See the Android Bedrock guide before using an APK.
+
   - [x] Integrated launcher
   - [x] Export & Import backup system
   - [x] Clean material you 3 ui design
@@ -85,7 +90,7 @@ Join the Xelo-Client community to stay updated and engage with other users:
 
 ## Contributing
 
-We welcome contributions! Please read the [CONTRIBUTING.md](/docs/CONTRIBUTING.md) file to learn how you can get involved.
+We welcome contributions! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file to learn how you can get involved.
 
 
 ## Get Involved

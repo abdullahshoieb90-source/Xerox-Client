@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bedrock_client_version">Xelo Client %1$s</string>
+    <string name="bedrock_game_title">ماين كرافت بيدروك</string>
+    <string name="bedrock_installed_version">ماين كرافت بيدروك المثبّتة: %1$s. راجع لوحة التحكم ← المودات لمعرفة ما يمكنك تجربته.</string>
+    <string name="bedrock_game_missing">ماين كرافت بيدروك غير مثبّتة. ثبّتها أو حدّثها من متجرك.</string>
+    <string name="bedrock_launch_failed">تعذّر على أندرويد فتح ماين كرافت. تأكّد من تثبيت نسخة بيدروك الرسمية ومن أنها مفعّلة.</string>
+    <string name="bedrock_launch">فتح ماين كرافت</string>
+    <string name="bedrock_home_status">حالة اللعبة</string>
+    <string name="bedrock_share_status">مشاركة حالة اللعبة</string>
+    <string name="bedrock_share">مشاركة</string>
+    <string name="bedrock_modules_title">المودات</string>
+    <string name="bedrock_modules_subtitle">استورد المودات المرئية كحزم موارد. المودات القديمة موجودة في القائمة لكنها لا تعمل داخل اللعبة في هذا الإصدار.</string>
+    <string name="bedrock_legacy_unavailable">مود قديم · غير متاح داخل اللعبة</string>
+    <string name="bedrock_module_pack">حزمة موارد · فعّلها داخل ماين كرافت</string>
+    <string name="bedrock_import">استيراد</string>
+    <string name="bedrock_import_module">استيراد %1$s</string>
+    <string name="bedrock_module_instructions">بعد أن تؤكّد ماين كرافت الاستيراد، افتح الإعدادات ← الموارد العامة ← حزمي وفعّل حزمة Xelo. يمكنك إيقافها من هناك. لا يستطيع Xelo التحقّق من التفعيل.</string>
+    <string name="bedrock_module_opened">أُرسلت الحزمة إلى ماين كرافت. تأكّد من ظهور رسالة الاستيراد، ثم فعّلها من الموارد العامة.</string>
+    <string name="bedrock_pick_file">فتح ملف بيدروك</string>
+    <string name="bedrock_import_preparing">جارٍ تجهيز الملف لماين كرافت…</string>
+    <string name="bedrock_file_opened">أُرسل الملف إلى ماين كرافت. ستخبرك اللعبة إن تم الاستيراد.</string>
+    <string name="bedrock_unsupported_file">اختر ملفًا بامتداد ‎.mcpack أو ‎.mcaddon أو ‎.mcworld أو ‎.mctemplate.</string>
+    <string name="bedrock_cache_limit">الملف أكبر من سعة الاستيراد (٥١٢ ميغابايت) أو أن ذاكرة الاستيراد ممتلئة. جرّب فتحه في ماين كرافت من تطبيق الملفات.</string>
+    <string name="bedrock_read_failed">تعذّرت قراءة الملف أو تجهيزه. أعد اختياره للمحاولة من جديد.</string>
+    <string name="bedrock_handoff_failed">لم تقبل ماين كرافت الملف من Xelo. جرّب فتحه من تطبيق الملفات مباشرة.</string>
+    <string name="bedrock_import_canceled">توقف الاستيراد لأن Xelo لم يعد في الواجهة. حاول مرة أخرى.</string>
+    <string name="bedrock_touch_status">يمكنك معاينة أزرار مودات اللمس هنا، لكنها لا تعمل في اللعبة المثبّتة في هذا الإصدار.</string>
+    <string name="bedrock_touch_preview">معاينة الأزرار</string>
+    <string name="bedrock_touch_preview_added">أُضيف %1$s إلى المعاينة فقط.</string>
+    <string name="bedrock_touch_preview_removed">أُزيل %1$s من المعاينة.</string>
+    <string name="bedrock_version_isolation_unavailable">عزل الإصدارات (قديم وغير متاح)</string>
+    <string name="bedrock_welcome">افتح ماين كرافت بيدروك المثبّتة، أو انتقل إلى لوحة التحكم ← المودات لتجربة حزم الموارد المرئية.</string>
+    <string name="bedrock_legacy_files">ملفات Xelo القديمة · لا تصل إلى اللعبة المثبّتة</string>
+    <string name="bedrock_no_legacy_data">لا توجد بيانات Xelo قديمة</string>
+</resources>

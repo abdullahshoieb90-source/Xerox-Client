@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bedrock_client_version">Xelo Client %1$s</string>
+    <string name="bedrock_game_title">Minecraft Bedrock</string>
+    <string name="bedrock_installed_version">Installed: Minecraft Bedrock %1$s. See Dashboard → Modules for mod availability.</string>
+    <string name="bedrock_game_missing">Minecraft Bedrock is not installed. Install or update it through your store.</string>
+    <string name="bedrock_launch_failed">Android could not open Minecraft. Check that the official Bedrock app is installed and enabled.</string>
+    <string name="bedrock_launch">Launch Minecraft</string>
+    <string name="bedrock_home_status">Game status</string>
+    <string name="bedrock_share_status">Share game status</string>
+    <string name="bedrock_share">Share</string>
+    <string name="bedrock_modules_title">Modules</string>
+    <string name="bedrock_modules_subtitle">Import visual modules as resource packs. Legacy modules are listed but not active in this build.</string>
+    <string name="bedrock_legacy_unavailable">Legacy module · Not available in game</string>
+    <string name="bedrock_module_pack">Resource pack · Activate in Minecraft</string>
+    <string name="bedrock_import">Import</string>
+    <string name="bedrock_import_module">Import %1$s</string>
+    <string name="bedrock_module_instructions">After Minecraft confirms import, go to Settings → Global Resources → My Packs and activate the Xelo pack. Disable it there to undo the change. Xelo cannot verify activation.</string>
+    <string name="bedrock_module_opened">Sent to Minecraft. Check its import confirmation, then activate the pack in Global Resources.</string>
+    <string name="bedrock_pick_file">Open Bedrock file</string>
+    <string name="bedrock_import_preparing">Preparing file for Minecraft…</string>
+    <string name="bedrock_file_opened">Sent to Minecraft. The game will report whether it imported the file.</string>
+    <string name="bedrock_unsupported_file">Select a .mcpack, .mcaddon, .mcworld, or .mctemplate file.</string>
+    <string name="bedrock_cache_limit">This file is too large for the 512 MB import cache, or the cache is full. Try opening it from Files in Minecraft.</string>
+    <string name="bedrock_read_failed">Xelo could not read or prepare the file. Select it again to retry.</string>
+    <string name="bedrock_handoff_failed">Minecraft did not accept the file from Xelo. Try opening it directly from Files.</string>
+    <string name="bedrock_import_canceled">Import stopped because Xelo was no longer in front. Try again.</string>
+    <string name="bedrock_touch_status">Touch Modules are kept here for layout preview only. They do not run in the installed game in this build.</string>
+    <string name="bedrock_touch_preview">Preview layout</string>
+    <string name="bedrock_touch_preview_added">%1$s added to the preview only.</string>
+    <string name="bedrock_touch_preview_removed">%1$s removed from the preview.</string>
+    <string name="bedrock_version_isolation_unavailable">Version isolation (legacy, unavailable)</string>
+    <string name="bedrock_welcome">Open your installed Minecraft Bedrock game, or go to Dashboard → Modules to try the visual resource packs.</string>
+    <string name="bedrock_legacy_files">Legacy Xelo files · Does not access the installed game</string>
+    <string name="bedrock_no_legacy_data">No legacy Xelo data found</string>
+</resources>

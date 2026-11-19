@@ -1,82 +1,58 @@
-name: Build Debug APK
+name: Build Xelo Client APK
 
 on:
+  workflow_dispatch:
   push:
-    branches: [master, develop]
+    branches: [master, develop, 'arena/**']
   pull_request:
     branches: [master, develop]
+
+permissions:
+  contents: read
 
 jobs:
   debug-build:
     runs-on: ubuntu-latest
-    env:
-      JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
-
+    timeout-minutes: 20
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: "recursive"
-      - name: Update submodules (retry)
-        run: |
-          for i in 1 2 3; do
-            git submodule update --init --recursive && break
-            echo "Retry $i..."
-            sleep 10
-          done
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '21'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          ndk-version: ${{ env.ANDROID_NDK_VERSION }}
+      - uses: android-actions/setup-android@v3
 
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-debug-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-debug-
-            ${{ runner.os }}-gradle-
+      - name: Install pinned Android SDK components
+        run: sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
+      - uses: gradle/actions/setup-gradle@v4
 
-      - name: Run Tests
-        run: ./gradlew testDebugUnitTest --stacktrace
+      - name: Test and build the original Android app
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
-
-      - name: List Debug APK files
+      - name: Verify signed APK
         run: |
-          echo "Debug APK files generated:"
-          find app/build/outputs/apk/debug -name "*.apk" -type f || echo "No APK files found"
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          "$tools/zipalign" -c -P 16 4 "$apk"
+          "$tools/apksigner" verify --verbose --print-certs "$apk"
+          aapt_output=$("$tools/aapt" dump badging "$apk")
+          grep -q "^package: name='com.origin.launcher.beta'" <<< "$aapt_output"
+          sha256sum "$apk"
 
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: origin-debug-apk-${{ github.run_number }}
-          path: app/build/outputs/apk/debug/*.apk
+          name: xelo-client-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
           if-no-files-found: error
 
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: debug-test-results-${{ github.run_number }}
-          path: |
-            app/build/reports/tests/
-            app/build/test-results/
+          name: xelo-client-test-results
+          path: app/build/test-results/testDebugUnitTest/
           retention-days: 7
           if-no-files-found: ignore

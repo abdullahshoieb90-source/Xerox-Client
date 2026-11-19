@@ -1,2 +1,5 @@
 */build/
 **/target/
+.gradle/
+local.properties
+/artifacts/*.apk

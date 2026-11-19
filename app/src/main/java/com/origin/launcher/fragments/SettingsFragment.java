@@ -117,6 +117,8 @@ public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle sa
 }
 
 private void showVersionDialog() {
+    versionManager.loadAllVersions();
+    updateVersionDisplay();
     if (versionDialog != null && versionDialog.isShowing()) {
         dismissVersionDialog();
         return;
@@ -156,7 +158,7 @@ private void dismissVersionDialog() {
 
 @Override
 public void onVersionSelected(GameVersion version) {
-    versionManager.selectVersion(version);
+    versionManager.loadAllVersions();
     updateVersionDisplay();
     dismissVersionDialog();
 }
@@ -169,7 +171,7 @@ public void onVersionSelected(GameVersion version) {
         selectedVersionText.setText(current.displayName);
         selectedVersionText.setTextColor(ContextCompat.getColor(requireContext(), R.color.primary));
     } else {
-        selectedVersionText.setText("No version selected");
+        selectedVersionText.setText(R.string.bedrock_game_missing);
         selectedVersionText.setTextColor(ContextCompat.getColor(requireContext(), R.color.onSurfaceVariant));
     }
 }
@@ -207,7 +209,7 @@ public void onVersionSelected(GameVersion version) {
                         R.anim.slide_in_left,   
                         R.anim.slide_out_left 
                     )
-                    .replace(android.R.id.content, new ConfigurationFragment())
+                    .replace(R.id.fragment_container, new ConfigurationFragment())
                     .addToBackStack(null)
                     .commit();
                 

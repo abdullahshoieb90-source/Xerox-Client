@@ -40,23 +40,12 @@ import androidx.annotation.NonNull;
 
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
-import com.origin.launcher.Launcher.MinecraftLauncher;
-import com.origin.launcher.versions.GameVersion;
-import com.origin.launcher.versions.VersionManager;
-import com.origin.launcher.databinding.ActivityMainBinding;
 import com.origin.launcher.utils.FeatureSettings;
 import com.origin.launcher.animation.DynamicAnim;
 import com.origin.launcher.fragments.HomeFragment;
 import android.widget.Button;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.os.Build;
-import android.os.Environment;
-import android.provider.Settings;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.annotation.NonNull;
 import com.origin.launcher.Launcher.inbuilt.manager.InbuiltModSizeStore;
 import com.origin.launcher.fragments.SettingsFragment;
@@ -75,8 +64,6 @@ public class MainActivity extends BaseThemedActivity {
     private static final String KEY_THEMES_DIALOG_SHOWN = "themes_dialog_shown";
     private static final String KEY_CREDITS_SHOWN = "credits_shown";
     private static final String KEY_GITHUB_STAR_SHOWN = "github_star_shown"; // CHANGED: Added new key
-    private static final String KEY_STORAGE_PERMS_ASKED = "storage_perms_asked";
-    private static final int REQ_STORAGE_PERMS = 100;
 
     private SettingsFragment settingsFragment;
     private int currentFragmentIndex = 0;
@@ -172,75 +159,6 @@ public class MainActivity extends BaseThemedActivity {
         boolean themesDialogShown = prefs.getBoolean(KEY_THEMES_DIALOG_SHOWN, false);
         boolean creditsShown = prefs.getBoolean(KEY_CREDITS_SHOWN, false);
         boolean githubStarShown = prefs.getBoolean(KEY_GITHUB_STAR_SHOWN, false); // CHANGED
-        boolean storageAsked = prefs.getBoolean(KEY_STORAGE_PERMS_ASKED, false);
-
-        if (isFirstLaunch) {
-            if (!storageAsked) {
-                ensureStorageAccess(prefs);
-                return;
-            }
-            
-            showFirstLaunchDialog(prefs, disclaimerShown, themesDialogShown, creditsShown, githubStarShown); // CHANGED
-            prefs.edit().putBoolean(KEY_FIRST_LAUNCH, false).apply();
-        } else if (!storageAsked) {
-            ensureStorageAccess(prefs);
-        } else if (!disclaimerShown) {
-            showDisclaimerDialog(prefs);
-        } else if (!creditsShown) {
-            showThanksDialog(prefs);
-        } else if (!githubStarShown) { // CHANGED
-            showGithubStarDialog(prefs);
-        }
-    }
-
-    private void ensureStorageAccess(SharedPreferences prefs) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (!Environment.isExternalStorageManager()) {
-                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                intent.setData(Uri.parse("package:" + getPackageName()));
-                startActivityForResult(intent, REQ_STORAGE_PERMS);
-                return;
-            }
-        } else {
-            int read = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-            int write = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            if (read != PackageManager.PERMISSION_GRANTED || write != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{
-                                Manifest.permission.READ_EXTERNAL_STORAGE,
-                                Manifest.permission.WRITE_EXTERNAL_STORAGE
-                        },
-                        REQ_STORAGE_PERMS);
-                return;
-            }
-        }
-        
-        prefs.edit().putBoolean(KEY_STORAGE_PERMS_ASKED, true).apply();
-        continueFirstLaunchFlow(prefs);
-    }
-
-    private void createNoMediaFile() {
-        try {
-            java.io.File baseDir = new java.io.File(android.os.Environment.getExternalStorageDirectory(), "games/xelo_client");
-            if (!baseDir.exists()) {
-                baseDir.mkdirs();
-            }
-            java.io.File noMediaFile = new java.io.File(baseDir, ".nomedia");
-            if (!noMediaFile.exists()) {
-                noMediaFile.createNewFile();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void continueFirstLaunchFlow(SharedPreferences prefs) {
-        boolean isFirstLaunch = prefs.getBoolean(KEY_FIRST_LAUNCH, true);
-        boolean disclaimerShown = prefs.getBoolean(KEY_DISCLAIMER_SHOWN, false);
-        boolean creditsShown = prefs.getBoolean(KEY_CREDITS_SHOWN, false);
-        boolean themesDialogShown = prefs.getBoolean(KEY_THEMES_DIALOG_SHOWN, false);
-        boolean githubStarShown = prefs.getBoolean(KEY_GITHUB_STAR_SHOWN, false);
-
         if (isFirstLaunch) {
             showFirstLaunchDialog(prefs, disclaimerShown, themesDialogShown, creditsShown, githubStarShown);
             prefs.edit().putBoolean(KEY_FIRST_LAUNCH, false).apply();
@@ -248,10 +166,8 @@ public class MainActivity extends BaseThemedActivity {
             showDisclaimerDialog(prefs);
         } else if (!creditsShown) {
             showThanksDialog(prefs);
-        } else if (!githubStarShown) { 
+        } else if (!githubStarShown) {
             showGithubStarDialog(prefs);
-        } else if (!themesDialogShown) {
-            // Check for themes dialog if needed
         }
     }
 
@@ -262,7 +178,7 @@ public class MainActivity extends BaseThemedActivity {
                                        boolean githubStarShown) {
         new MaterialAlertDialogBuilder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
                 .setTitle("Welcome to Xelo Client")
-                .setMessage("Launch Minecraft once before doing anything, to make the config load properly")
+                .setMessage(R.string.bedrock_welcome)
                 .setIcon(R.drawable.ic_info)
                 .setPositiveButton("Proceed", (dialog, which) -> {
                     dialog.dismiss();
@@ -525,32 +441,12 @@ public class MainActivity extends BaseThemedActivity {
         Log.d(TAG, "MainActivity onActivityResult: requestCode=" + requestCode + 
               ", resultCode=" + resultCode + ", data=" + (data != null ? "present" : "null"));
               
-        if (requestCode == REQ_STORAGE_PERMS) {
-            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-            createNoMediaFile();
-            prefs.edit().putBoolean(KEY_STORAGE_PERMS_ASKED, true).apply();
-            continueFirstLaunchFlow(prefs);
-            return;
-        }
-        
         if (requestCode == DiscordLoginActivity.DISCORD_LOGIN_REQUEST_CODE && settingsFragment != null) {
             Log.d(TAG, "Forwarding Discord login result to SettingsFragment");
             settingsFragment.onActivityResult(requestCode, resultCode, data);
         }
     }
     
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQ_STORAGE_PERMS) {
-            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-            prefs.edit().putBoolean(KEY_STORAGE_PERMS_ASKED, true).apply();
-            continueFirstLaunchFlow(prefs);
-        }
-    }
-
     @Override
     protected void onResume() {
         super.onResume();

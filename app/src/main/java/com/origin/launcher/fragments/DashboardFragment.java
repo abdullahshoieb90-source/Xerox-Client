@@ -1,13 +1,9 @@
 package com.origin.launcher.fragments;
 
-import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.Settings;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -28,8 +24,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -101,73 +95,22 @@ public class DashboardFragment extends BaseThemedFragment {
         if (folderRecyclerView != null) {
             folderRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-            // File management root - try multiple possible paths
-            String[] possiblePaths = {
-                "/storage/emulated/0/Android/data/com.origin.launcher/files/games/com.mojang/",
-                "/storage/emulated/0/games/com.mojang/",
-                "/storage/emulated/0/Android/data/com.mojang.minecraftpe/files/games/com.mojang/",
-                getContext().getExternalFilesDir(null) + "/games/com.mojang/"
-            };
-            
-            File rootDir = null;
-            String rootPath = null;
-            
-            for (String path : possiblePaths) {
-                File testDir = new File(path);
-                if (testDir.exists() && testDir.isDirectory()) {
-                    File[] testFiles = testDir.listFiles();
-                    if (testFiles != null && testFiles.length > 0) {
-                        rootDir = testDir;
-                        rootPath = path;
-                        currentRootDir = testDir; // Store for later use
-                        break;
-                    }
-                }
-            }
-            
-            List<String> folderNames = new ArrayList<>();
-            if (rootDir != null && rootDir.exists() && rootDir.isDirectory()) {
-                File[] files = rootDir.listFiles();
-                if (files != null) {
-                    for (File file : files) {
-                        if (file.isDirectory()) {
-                            folderNames.add(file.getName());
-                        }
-                    }
-                }
-            } else {
-                folderNames.add("No Minecraft data found");
-            }
-            FolderAdapter adapter = new FolderAdapter(folderNames, getContext());
-            folderRecyclerView.setAdapter(adapter);
+            refreshFolderList(folderRecyclerView);
         }
 
         if (backupButton != null) {
-            // Apply theme to backup button
             ThemeUtils.applyThemeToButton(backupButton, requireContext());
             backupButton.setOnClickListener(v -> {
-                if (hasStoragePermission()) {
-                    if (currentRootDir != null) {
-                        openSaveLocationChooser();
-                    } else {
-                        Toast.makeText(requireContext(), "No Minecraft data found to backup", Toast.LENGTH_LONG).show();
-                    }
+                if (currentRootDir != null) {
+                    openSaveLocationChooser();
                 } else {
-                    requestStoragePermissions();
+                    Toast.makeText(requireContext(), R.string.bedrock_no_legacy_data, Toast.LENGTH_LONG).show();
                 }
             });
         }
-
         if (importButton != null) {
-            // Apply theme to import button
             ThemeUtils.applyThemeToButton(importButton, requireContext());
-            importButton.setOnClickListener(v -> {
-                if (hasStoragePermission()) {
-                    openFileChooser();
-                } else {
-                    requestStoragePermissions();
-                }
-            });
+            importButton.setOnClickListener(v -> openFileChooser());
         }
 
         // Initialize modules navigation button
@@ -338,7 +281,7 @@ public class DashboardFragment extends BaseThemedFragment {
 
     private void initializeOptionsEditor(View view) {
         // Initialize options.txt file path
-        optionsFile = new File("/storage/emulated/0/Android/data/com.origin.launcher/files/games/com.mojang/minecraftpe/options.txt");
+        optionsFile = new File(legacyGameDirectory(), "minecraftpe/options.txt");
         
         // Get UI elements
         editOptionsButton = view.findViewById(R.id.editOptionsButton);
@@ -359,13 +302,7 @@ public class DashboardFragment extends BaseThemedFragment {
             editOptionsButton.setVisibility(View.VISIBLE);
             optionsNotFoundText.setVisibility(View.GONE);
             
-            editOptionsButton.setOnClickListener(v -> {
-                if (hasStoragePermission()) {
-                    openOptionsEditor();
-                } else {
-                    requestStoragePermissions();
-                }
-            });
+            editOptionsButton.setOnClickListener(v -> openOptionsEditor());
         } else {
             editOptionsButton.setVisibility(View.GONE);
             optionsNotFoundText.setVisibility(View.VISIBLE);
@@ -711,7 +648,7 @@ public class DashboardFragment extends BaseThemedFragment {
     private void importBackup(Uri zipUri) {
         try {
             // Use the specific target directory
-            File targetDir = new File("/storage/emulated/0/Android/data/com.origin.launcher/files/games/com.mojang/");
+            File targetDir = legacyGameDirectory();
             
             // Create directory if it doesn't exist
             if (!targetDir.exists()) {
@@ -740,7 +677,8 @@ public class DashboardFragment extends BaseThemedFragment {
                 Toast.makeText(requireContext(), "Backup imported successfully!", Toast.LENGTH_LONG).show();
                 
                 // Refresh the folder list
-                refreshFolderList();
+                refreshFolderList(requireView().findViewById(R.id.folderRecyclerView));
+                initializeOptionsEditor(requireView());
             } else {
                 Toast.makeText(requireContext(), "Could not read the selected file", Toast.LENGTH_LONG).show();
             }
@@ -758,12 +696,11 @@ public class DashboardFragment extends BaseThemedFragment {
             while ((zipEntry = zis.getNextEntry()) != null) {
                 String fileName = zipEntry.getName();
                 
-                // Security check: prevent directory traversal
-                if (fileName.contains("..")) {
-                    continue;
+                File newFile = new File(targetDir, fileName).getCanonicalFile();
+                if (!newFile.toPath().startsWith(targetDir.getCanonicalFile().toPath())
+                        || newFile.equals(targetDir.getCanonicalFile())) {
+                    throw new IOException("Invalid backup entry");
                 }
-                
-                File newFile = new File(targetDir, fileName);
                 
                 if (zipEntry.isDirectory()) {
                     // Create directory
@@ -800,89 +737,22 @@ public class DashboardFragment extends BaseThemedFragment {
         }
     }
 
-    private void refreshFolderList() {
-        RecyclerView folderRecyclerView = getView().findViewById(R.id.folderRecyclerView);
-        if (folderRecyclerView != null) {
-            // Re-scan for folders
-            String[] possiblePaths = {
-                "/storage/emulated/0/Android/data/com.origin.launcher/files/games/com.mojang/",
-                "/storage/emulated/0/games/com.mojang/",
-                "/storage/emulated/0/Android/data/com.mojang.minecraftpe/files/games/com.mojang/",
-                getContext().getExternalFilesDir(null) + "/games/com.mojang/"
-            };
-            
-            File rootDir = null;
-            for (String path : possiblePaths) {
-                File testDir = new File(path);
-                if (testDir.exists() && testDir.isDirectory()) {
-                    File[] testFiles = testDir.listFiles();
-                    if (testFiles != null && testFiles.length > 0) {
-                        rootDir = testDir;
-                        currentRootDir = testDir;
-                        break;
-                    }
-                }
-            }
-            
-            List<String> folderNames = new ArrayList<>();
-            if (rootDir != null && rootDir.exists() && rootDir.isDirectory()) {
-                File[] files = rootDir.listFiles();
-                if (files != null) {
-                    for (File file : files) {
-                        if (file.isDirectory()) {
-                            folderNames.add(file.getName());
-                        }
-                    }
-                }
-            } else {
-                folderNames.add("No Minecraft data found");
-            }
-            FolderAdapter adapter = new FolderAdapter(folderNames, getContext());
-            folderRecyclerView.setAdapter(adapter);
-        }
+    private File legacyGameDirectory() {
+        File root = requireContext().getExternalFilesDir(null);
+        return new File(root == null ? requireContext().getFilesDir() : root, "games/com.mojang");
     }
 
-    private boolean hasStoragePermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+ (API 33+) - Check media permissions
-            return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED ||
-                   ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED ||
-                   ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Android 11+ (API 30+) - Check MANAGE_EXTERNAL_STORAGE
-            return Environment.isExternalStorageManager();
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Android 6+ to Android 10 - Check legacy storage permissions
-            return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED ||
-                   ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    private void refreshFolderList(RecyclerView recyclerView) {
+        if (recyclerView == null) return;
+        File root = legacyGameDirectory();
+        File[] children = root.listFiles();
+        List<String> names = new ArrayList<>();
+        currentRootDir = (children != null && children.length > 0) ? root : null;
+        if (children != null) {
+            for (File child : children) if (child.isDirectory()) names.add(child.getName());
         }
-        return true; // Below Android 6, permissions are granted at install time
-    }
-
-    private void requestStoragePermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+ (API 33+) - Request media permissions
-            String[] permissions = {
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO,
-                Manifest.permission.READ_MEDIA_AUDIO,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            };
-            requestPermissions(permissions, 1001);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Android 11+ (API 30+) - Request MANAGE_EXTERNAL_STORAGE
-            Toast.makeText(requireContext(), "Please grant 'All files access' permission to backup files", Toast.LENGTH_LONG).show();
-            Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-            intent.setData(Uri.parse("package:" + requireContext().getPackageName()));
-            startActivity(intent);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Android 6+ to Android 10 - Request READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE
-            String[] permissions = {
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            };
-            requestPermissions(permissions, 1001);
-        }
+        if (names.isEmpty()) names.add(getString(R.string.bedrock_no_legacy_data));
+        recyclerView.setAdapter(new FolderAdapter(names, requireContext()));
     }
 
     private void createBackupAtLocation(Uri saveUri, File rootDir) {

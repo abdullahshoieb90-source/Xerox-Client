@@ -35,7 +35,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Modules"
+                android:text="@string/bedrock_modules_title"
                 android:textSize="32sp"
                 android:textStyle="bold"
                 android:textColor="@color/onBackground"
@@ -46,31 +46,16 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Configure your game modifications"
+            android:text="@string/bedrock_modules_subtitle"
             android:textSize="16sp"
             android:textColor="@color/onSurfaceVariant"
             android:layout_marginBottom="32dp" />
 
-        <!-- ScrollView for modules -->
-        <ScrollView
-            android:id="@+id/modulesScrollView"
+        <LinearLayout
+            android:id="@+id/modulesContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:nestedScrollingEnabled="true">
-
-            <LinearLayout
-                android:id="@+id/modulesContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@android:color/transparent">
-
-                <!-- Modules will be dynamically added here -->
-
-            </LinearLayout>
-
-        </ScrollView>
+            android:orientation="vertical" />
 
     </LinearLayout>
 </ScrollView>

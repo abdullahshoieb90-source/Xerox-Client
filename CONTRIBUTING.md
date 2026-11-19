@@ -42,18 +42,13 @@ cd Xelo
 ```
 
 ### 3. Set Up the Environment
-> **You’ll need:**
-> - Android Studio (Giraffe or newer)
-> - Java 17
-> - Android SDK 33+
-> - Gradle
+Use JDK 21, Android Platform 36, and Build-Tools 36.0.0. The repository Gradle wrapper installs Gradle 8.13. See the [Android Bedrock guide](docs/android-bedrock.md) to set up the SDK and verify the original app.
 
 ```bash
-./gradlew assembleDebug
+./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
-APK output path:  
-`app/build/outputs/apk/debug/app-debug.apk`
+APK output: `app/build/outputs/apk/debug/app-debug.apk`.
 
 ### 4. Create a Branch
 ```bash

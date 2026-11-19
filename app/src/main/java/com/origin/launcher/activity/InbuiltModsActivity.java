@@ -48,6 +48,7 @@ public class InbuiltModsActivity extends BaseThemedActivity {
         closeButton.setOnClickListener(v -> finish());
         DynamicAnim.applyPressScale(closeButton);
         ImageButton customiseButton = findViewById(R.id.customise_inbuilt_mod_button);
+        customiseButton.setContentDescription(getString(R.string.bedrock_touch_preview));
         customiseButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, InbuiltModsCustomizeActivity.class);
             startActivityForResult(intent, REQ_CUSTOMIZE_INBUILT);
@@ -64,12 +65,12 @@ public class InbuiltModsActivity extends BaseThemedActivity {
             if (enable) {
                 modManager.addMod(mod.getId());
                 Toast.makeText(this,
-                        getString(R.string.inbuilt_mod_added, mod.getName()),
+                        getString(R.string.bedrock_touch_preview_added, mod.getName()),
                         Toast.LENGTH_SHORT).show();
             } else {
                 modManager.removeMod(mod.getId());
                 Toast.makeText(this,
-                        getString(R.string.inbuilt_mod_removed, mod.getName()),
+                        getString(R.string.bedrock_touch_preview_removed, mod.getName()),
                         Toast.LENGTH_SHORT).show();
             }
             loadMods();
