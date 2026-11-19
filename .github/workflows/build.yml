@@ -1,76 +1,66 @@
 name: Build Debug APK
 
 on:
+  workflow_dispatch:
   push:
-    branches: [master, develop]
+    branches: [master, develop, 'arena/**']
   pull_request:
     branches: [master, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: debug-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   debug-build:
     runs-on: ubuntu-latest
-    env:
-      JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
+    timeout-minutes: 60
 
     steps:
-      - name: Checkout code
+      - name: Checkout code and submodules
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          submodules: "recursive"
-      - name: Update submodules (retry)
-        run: |
-          for i in 1 2 3; do
-            git submodule update --init --recursive && break
-            echo "Retry $i..."
-            sleep 10
-          done
+          submodules: recursive
+          persist-credentials: false
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '21'
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          ndk-version: ${{ env.ANDROID_NDK_VERSION }}
 
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
+      - name: Install Android build dependencies
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
+
+      - name: Configure local SDK path
+        run: printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-debug-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-debug-
-            ${{ runner.os }}-gradle-
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Run Tests
-        run: ./gradlew testDebugUnitTest --stacktrace
-
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
-
-      - name: List Debug APK files
-        run: |
-          echo "Debug APK files generated:"
-          find app/build/outputs/apk/debug -name "*.apk" -type f || echo "No APK files found"
+      - name: Run tests and build Debug APK
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: origin-debug-apk-${{ github.run_number }}
+          name: xerox-debug-apk-${{ github.run_number }}
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 14
           if-no-files-found: error
 
-      - name: Upload Test Results
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
