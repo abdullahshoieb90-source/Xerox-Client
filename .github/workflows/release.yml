@@ -9,7 +9,7 @@ on:
         default: false
         type: boolean
       publish_debug_run_id:
-        description: 'Successful Xelo debug workflow run ID to publish as a test APK'
+        description: 'Successful Xelo debug run ID to attach to its prepared draft test release'
         required: false
         default: ''
         type: string
@@ -198,41 +198,28 @@ jobs:
           digest=$(sha256sum "$apk" | cut -d ' ' -f 1)
           printf 'sha256=%s\n' "$digest" >> "$GITHUB_OUTPUT"
 
-      - name: Publish a test-only GitHub prerelease
+      - name: Attach the verified APK to the prepared draft release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN: ${{ inputs.publish_debug_run_id }}
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
           APK_SHA256: ${{ steps.apk.outputs.sha256 }}
         run: |
-          out="$RUNNER_TEMP/xelo-verified"
-          apk="$out/xelo-client-android-test.apk"
-          source_sha="$SOURCE_SHA"
-          digest="$APK_SHA256"
-          tag="xelo-android-test-${source_sha:0:12}"
-          if git show-ref --verify --quiet "refs/tags/$tag"; then
-            test "$(git rev-parse "refs/tags/$tag^{commit}")" = "$source_sha"
-          fi
-          cat > "$out/notes.md" <<NOTES
-          Signed debug APK from the original Xelo Client Android app, not Companion.
-          Download **xelo-client-android-test.apk** directly. No ZIP extraction is needed.
-
-          This is a test build, not a stable release or proof that all modules work on Bedrock.
-          Three resource-pack modules are available to try on Android Bedrock 26.62 (1.26.62.1).
-          Touch Modules are preview-only and do not run in the game in this build.
-          Do not uninstall Minecraft to install Xelo.
-
-          Verified build: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN
-          Source commit: $source_sha
-          APK SHA-256: $digest
-          NOTES
-          if ! result=$(gh release create "$tag" "$apk" --repo "$GITHUB_REPOSITORY" --target "$source_sha" \
-            --title 'Xelo Client – Android test APK' --notes-file "$out/notes.md" --prerelease --latest=false 2>&1); then
-            printf '%s\n' "$result"
-            # Make the HTTP status and reason visible alongside the failing check.
-            error=${result%%$'\n'*}
-            printf '::error title=Test APK release failed::%s\n' "${error//%/%25}"
+          tag="xelo-android-test-${SOURCE_SHA:0:12}"
+          release=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" \
+            --json isDraft,isPrerelease,targetCommitish,assets)
+          if ! jq -e --arg sha "$SOURCE_SHA" '
+            .isDraft and .isPrerelease and .targetCommitish == $sha
+              and all(.assets[]; .name != "xelo-client-android-test.apk")
+          ' <<< "$release"; then
+            echo '::error::Use an empty draft test release that targets the verified source commit.'
             exit 1
           fi
-          printf '%s\n' "$result"
+          apk="$RUNNER_TEMP/xelo-verified/xelo-client-android-test.apk"
+          if ! result=$(gh release upload "$tag" "$apk" --repo "$GITHUB_REPOSITORY" 2>&1); then
+            printf '%s\n' "$result"
+            error=${result%%$'\n'*}
+            printf '::error title=Test APK upload failed::%s\n' "${error//%/%25}"
+            exit 1
+          fi
+          echo "Verified APK SHA-256: $APK_SHA256" >> "$GITHUB_STEP_SUMMARY"
