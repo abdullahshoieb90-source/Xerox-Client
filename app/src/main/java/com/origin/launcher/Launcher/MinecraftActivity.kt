@@ -58,13 +58,23 @@ class MinecraftActivity : MainActivity() {
                 Log.w(TAG, "Failed to load preloader: ${e.message}")
             }
 
+            // This Activity may be recreated in a fresh process. Libraries loaded
+            // by the launcher thread are not guaranteed to still be resident.
+            for (dependency in listOf("c++_shared", "fmod", "MediaDecoders_Android")) {
+                check(gameManager.loadLibrary(dependency)) {
+                    "Required Minecraft dependency could not be loaded: $dependency"
+                }
+            }
+
             if (!gameManager.loadLibrary("minecraftpe")) {
                 throw RuntimeException("Failed to load libminecraftpe.so")
             }
         } catch (e: Exception) {
             Toast.makeText(this, "Failed to load game: ${e.message}", Toast.LENGTH_LONG).show()
-            finish()
-            return
+            // Do not return before super.onCreate(): Android replaces the real
+            // linker failure with SuperNotCalledException. Nor can we initialize
+            // the native GameActivity superclass when its libraries are missing.
+            throw IllegalStateException("Minecraft native initialization failed", e)
         }
         super.onCreate(savedInstanceState)
         MinecraftActivityState.onCreated(this)
