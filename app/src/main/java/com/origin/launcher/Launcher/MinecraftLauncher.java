@@ -154,7 +154,9 @@ if (!shouldLoadPlayFab(version)) {
                     gameManager.loadLibrary("fmod");
                     gameManager.loadLibrary("MediaDecoders_Android");
                     gameManager.loadLibrary("minecraftpe");
-                    gameManager.loadLibrary("mtbinloader2");
+                    // MaterialBinLoader2 is disabled until compatible game versions
+                    // can be verified: its native initializer aborts the process
+                    // with "No signature was found" on unsupported Minecraft builds.
                 }
 
                 activity.runOnUiThread(() -> {

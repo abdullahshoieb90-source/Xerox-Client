@@ -40,7 +40,6 @@ class GamePackageManager private constructor(private val context: Context, priva
         "libpairipcore.so",
         "libPlayFabMultiplayer.so",
         "libmaesdk.so",
-        "libmtbinloader2.so",
     )
 
     init {
