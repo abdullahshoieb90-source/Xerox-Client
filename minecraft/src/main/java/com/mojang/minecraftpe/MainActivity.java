@@ -421,16 +421,23 @@ public class MainActivity extends GameActivity implements View.OnKeyListener, Fi
     public void initializeCrashManager() {
     }
 
+    /** Launcher diagnostic hook; no dependency on the launcher module. */
+    protected void onStartupStage(String stage) {}
+
     @SuppressLint("ResourceType")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         mMainThread = Thread.currentThread();
         SplashScreen.installSplashScreen(this);
+        onStartupStage("GameActivity.onCreate starting");
         super.onCreate(savedInstanceState);
+        onStartupStage("GameActivity.onCreate finished");
         if (getResources() == null) {
             Process.killProcess(Process.myPid());
         }
+        onStartupStage("Waiting for native crash management setup");
         nativeWaitCrashManagementSetupComplete();
+        onStartupStage("Native crash management setup complete");
         initializeAppExitInfoHelper();
         mBrazeManager = new BrazeManager();
         if (isEduMode()) {
@@ -447,7 +454,9 @@ public class MainActivity extends GameActivity implements View.OnKeyListener, Fi
         }
         platform = Platform.createPlatform(true);
         setVolumeControlStream(3);
+        onStartupStage("FMOD.init starting");
         FMOD.init(this);
+        onStartupStage("FMOD.init finished");
         headsetConnectionReceiver = new HeadsetConnectionReceiver();
         mNetworkMonitor = new NetworkMonitor(getApplicationContext());
         platform.onAppStart(getWindow().getDecorView());

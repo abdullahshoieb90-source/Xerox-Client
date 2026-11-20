@@ -18,7 +18,12 @@ class MinecraftActivity : MainActivity() {
     private lateinit var gameManager: GamePackageManager
     private var overlayManager: InbuiltOverlayManager? = null
 
+    override fun onStartupStage(stage: String) {
+        LaunchTrace.mark(stage)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        LaunchTrace.mark("MinecraftActivity.onCreate entered")
         try {
             val versionDir = intent.getStringExtra("MC_PATH")
             val versionCode = intent.getStringExtra("MINECRAFT_VERSION") ?: ""
@@ -76,7 +81,9 @@ class MinecraftActivity : MainActivity() {
             // the native GameActivity superclass when its libraries are missing.
             throw IllegalStateException("Minecraft native initialization failed", e)
         }
+        LaunchTrace.mark("Mojang MainActivity.onCreate starting")
         super.onCreate(savedInstanceState)
+        LaunchTrace.mark("Mojang MainActivity.onCreate finished")
         MinecraftActivityState.onCreated(this)
     }
 
@@ -97,6 +104,7 @@ class MinecraftActivity : MainActivity() {
     override fun onResume() {
         super.onResume()
         MinecraftActivityState.onResumed()
+        LaunchTrace.mark("MinecraftActivity resumed")
 
         if (overlayManager == null) {
             startInbuiltModServices()

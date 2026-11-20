@@ -267,11 +267,13 @@ class GamePackageManager private constructor(private val context: Context, priva
     }
 
     fun loadLibrary(name: String): Boolean {
+        LaunchTrace.mark("Loading native library: $name")
         val libFile = File(nativeLibDir, if (name.startsWith("lib")) name else "lib$name.so")
         val libName = libFile.name
         return if (systemLoadedLibs.contains(libName)) {
             try {
                 System.loadLibrary(name.removePrefix("lib").removeSuffix(".so"))
+                LaunchTrace.mark("Loaded bundled library: $name")
                 Log.d(TAG, "Loaded $name as system library")
                 true
             } catch (e: UnsatisfiedLinkError) {
@@ -286,6 +288,7 @@ class GamePackageManager private constructor(private val context: Context, priva
             try {
                 if (libFile.exists() && libFile.length() > 0) {
                     System.load(libFile.absolutePath)
+                    LaunchTrace.mark("Loaded game library: $name")
                     Log.d(TAG, "Loaded $name from $nativeLibDir")
                     true
                 } else {

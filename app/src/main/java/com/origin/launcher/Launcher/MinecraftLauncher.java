@@ -65,6 +65,7 @@ public class MinecraftLauncher {
 
     public void launch(Intent sourceIntent, GameVersion version) {
         Activity activity = (Activity) context;
+        LaunchTrace.start(context);
 
         try {
             if (version == null) {
@@ -80,10 +81,13 @@ public class MinecraftLauncher {
             });
                         new Thread(() -> {
                 try {
+                    LaunchTrace.mark("Preparing game package");
                     gameManager = GamePackageManager.Companion.getInstance(context.getApplicationContext(), version);
+                    LaunchTrace.mark("Game package ready: " + version.versionCode);
                     fillIntentWithMcPath(sourceIntent, version);
                     launchMinecraftActivity(sourceIntent, version, false);
                 } catch (Exception e) {
+                    LaunchTrace.mark("Launch failed: " + Log.getStackTraceString(e));
                     Log.e(TAG, "Launch failed: " + e.getMessage(), e);
                     activity.runOnUiThread(() -> {
                         dismissLoading();
@@ -92,7 +96,8 @@ public class MinecraftLauncher {
                 }
             }).start();
         } catch (Exception e) {
-            Log.e(TAG, "Launch failed: " + e.getMessage(), e);
+            LaunchTrace.mark("Launch failed: " + Log.getStackTraceString(e));
+                    Log.e(TAG, "Launch failed: " + e.getMessage(), e);
             dismissLoading();
             showLaunchErrorOnUi("Launch failed: " + e.getMessage());
         }
@@ -161,9 +166,11 @@ if (!shouldLoadPlayFab(version)) {
 
                 activity.runOnUiThread(() -> {
                     dismissLoading();
+                    LaunchTrace.mark("Starting MinecraftActivity");
                     activity.startActivity(sourceIntent);
                 });
             } catch (Exception e) {
+                LaunchTrace.mark("Launch failed: " + Log.getStackTraceString(e));
                 Log.e(TAG, "Failed to launch Minecraft activity: " + e.getMessage(), e);
                 activity.runOnUiThread(() -> {
                     dismissLoading();
