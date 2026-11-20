@@ -18,6 +18,12 @@ class MinecraftActivity : MainActivity() {
     private lateinit var gameManager: GamePackageManager
     private var overlayManager: InbuiltOverlayManager? = null
 
+    // Narrow diagnostic workaround for the build observed to block indefinitely.
+    // Do not generalize to other versions without testing the native handshake.
+    override fun shouldWaitForNativeCrashManagement(): Boolean {
+        return intent.getStringExtra("MINECRAFT_VERSION") != "1.26.66.1"
+    }
+
     override fun onStartupStage(stage: String) {
         LaunchTrace.mark(stage)
     }

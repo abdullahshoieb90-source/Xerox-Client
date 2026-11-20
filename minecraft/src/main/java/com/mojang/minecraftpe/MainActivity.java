@@ -424,6 +424,9 @@ public class MainActivity extends GameActivity implements View.OnKeyListener, Fi
     /** Launcher diagnostic hook; no dependency on the launcher module. */
     protected void onStartupStage(String stage) {}
 
+    /** Preserve the normal native startup handshake unless a launcher opts out. */
+    protected boolean shouldWaitForNativeCrashManagement() { return true; }
+
     @SuppressLint("ResourceType")
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -435,9 +438,13 @@ public class MainActivity extends GameActivity implements View.OnKeyListener, Fi
         if (getResources() == null) {
             Process.killProcess(Process.myPid());
         }
-        onStartupStage("Waiting for native crash management setup");
-        nativeWaitCrashManagementSetupComplete();
-        onStartupStage("Native crash management setup complete");
+        if (shouldWaitForNativeCrashManagement()) {
+            onStartupStage("Waiting for native crash management setup");
+            nativeWaitCrashManagementSetupComplete();
+            onStartupStage("Native crash management setup complete");
+        } else {
+            onStartupStage("Compatibility mode: native crash management wait skipped");
+        }
         initializeAppExitInfoHelper();
         mBrazeManager = new BrazeManager();
         if (isEduMode()) {
